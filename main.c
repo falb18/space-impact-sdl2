@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
      * with the background.
      */
     for (i = 0; i < 84 * 48; ++i)
-        OldPixelMap[i] = 1;
+        OldPixelMap[i] = 0;
 
     /* Load pixels for fonts */
     UncompressFont();
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
 
                         /* Copy the current scene in the previous one */
                         /* Note: Is possible that this step is not necessary because it caused issues when uncommented */
-                        OldPixelMap[i] = PixelMap[i];
+                        // OldPixelMap[i] = PixelMap[i];
                     }
                 }
 
