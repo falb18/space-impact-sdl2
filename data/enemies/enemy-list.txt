@@ -1,0 +1,7 @@
+0-4.......1. level
+5-9.......2. level new
+10-14.....3. level new
+15-21.....4. level new
+22-29.....5. level new
+30-40.....6. level new
+255....... Bonus carrier
