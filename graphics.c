@@ -1,5 +1,6 @@
 #include "graphics.h"
 #include "font.h"
+#include "saves.h"
 
 /* Pixel Maps: Pixel maps of some objects are compiled into the game and can be generated from the editor */
 Uint8 /* Hardcode pixel maps */
@@ -59,6 +60,8 @@ Object StaticObject[] = { /* Static objects, Graphics enumeration stores names f
     {{5, 5}, pmExplosion[0]}, /* gExplosionA1 */
     {{5, 5}, pmExplosion[1]}, /* gExplosionA2 */
 };
+
+Object* DynamicObject[256] = {NULL};
 
 void DrawObject(Uint8* PixelMap, Object obj, Vec2 pos) {
     
@@ -213,9 +216,61 @@ Object GetObject(Uint16 ObjectID) {
     /* Object ID < 256 are hardcoded */
     if (ObjectID < 256) {
         return StaticObject[ObjectID];
+    } else {
+         
+        /* Search in dynamic objects array */
+        
+        /* Get the object ID, modulo prevents possible overindexing */
+        ObjectID %= 256;
+        
+        /* If the object is not already loaded, search for the file and load it */
+        if (!DynamicObject[ObjectID]) {
+            
+            FILE* ObjectData;
+            Uint8 Size[2];
+            Uint8* NewPixelMap;
+            Uint16 Pixels, Bytes;
+            
+            /* The complete path = folder + max three-digit ID + null character
+             * Example: data/objects/1.dat
+             */
+            /* Init the string with the folder location */
+            char Path[13 + 3  + 1] = "data/objects/";
+            FillFileName(Path, ObjectID);
+            ObjectData = fopen(Path, "rb");
+            
+            /* If failed to open file return an empty object */
+            if (!ObjectData)
+                return NewObject(NewVec2(0, 0), NULL);
+            
+            /* Read file's bytes and store them in the object */
+            fread(Size, sizeof(Uint8), 2, ObjectData);
+            Pixels = (Uint16)Size[0] * (Uint16)Size[1];
+            Bytes = Pixels / 8 + (Pixels % 8 != 0);
+            NewPixelMap = (Uint8*)malloc(Pixels);
+            fread(NewPixelMap, sizeof(Uint8), Bytes, ObjectData);
+            fclose(ObjectData);
+            UncompressPixelMap(NewPixelMap, Pixels, Bytes);
+            
+            DynamicObject[ObjectID] = (Object*)malloc(sizeof(Object));
+            DynamicObject[ObjectID]->Size.x = Size[0];
+            DynamicObject[ObjectID]->Size.y = Size[1];
+            DynamicObject[ObjectID]->Samples = NewPixelMap;
+        }
+        return *DynamicObject[ObjectID];
     }
-    
     return NewObject(NewVec2(0, 0), NULL); /* If it wasn't dynamic, then nothing */
+}
+
+/* Release all dynamically allocated objects */
+void FreeDynamicGraphics() {
+    int i;
+    for (i = 0; i < 256; ++i) { /* Walking down the block */
+        if (DynamicObject[i]) { /* If it finds a loaded dynamic object */
+            free(DynamicObject[i]->Samples); /* Free your pixel map first */
+            free(DynamicObject[i]); /* Then the object itself */
+        }
+    }
 }
 
 Vec2 NewVec2(Sint16 x, Sint16 y) {
