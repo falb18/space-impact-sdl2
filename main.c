@@ -337,6 +337,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    SDL_RemoveTimer(t);
+    /** Exit **/
+    EmptyEnemyList(&Enemies); /* Release remaining enemies */
+    // EmptyScenery(&Scene); /* Freeing remaining track elements */
+    EmptyShotList(&Shots); /* Release remaining shots */
+    FreeDynamicGraphics(); /* Freeing dynamic graphic objects */
+    FreeDynamicEnemies(); /* Unleash dynamic enemies */
+    SDL_RemoveTimer(t); /* This is not necessary, it only eliminates the warning that t is not used */
+    // SDL_PauseAudio(1); /* Stop sound */
     SDL_Quit();
 }
