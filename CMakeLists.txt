@@ -11,6 +11,8 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 add_executable(
     ${PROJECT_NAME}
     "main.c"
+    "graphics.c"
+    "font.c"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
