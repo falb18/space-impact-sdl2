@@ -125,10 +125,15 @@ int main(int argc, char *argv[]) {
     /* Pointer to the first element in the linked list of enemies */
     EnemyList *Enemies = NULL;
 
+    /* Pointer to the first element in the linked list of landscape objects */
+    Scenery *Scene = NULL;
+
     /* Flag to enable landscape scrolling
      * Set to false after the end of each level
      */
     Uint8 MoveScene;
+
+    ReadSavedLevel(&SavedLevel);
 
     /* Read the number of level available */
     while (LastLevel) {
@@ -232,7 +237,7 @@ int main(int argc, char *argv[]) {
                             
                             PlayerUp = PlayerDown = PlayerLeft = PlayerRight = PlayerShooting = 0;
                             LevelSpawner(&Enemies, Level);
-                            // EmptyScenery(&Scene);
+                            EmptyScenery(&Scene);
                             MoveScene = 1;
                         }
                     }
@@ -292,6 +297,36 @@ int main(int argc, char *argv[]) {
                     InvertScreenPart(PixelMap, NewVec2(0, MenuItem * 11 - 5), NewVec2(76, MenuItem * 11 + 5)); /* Inverts the image around the selected menu item */
                     DrawText(PixelMap, "Select", NewVec2(24, 40), 0); /* Select inscription at the bottom */
                     DrawScrollBar(PixelMap, (MenuItem - 1) * (SavedLevel ? 50 : 100)); /* Draw a scroll bar */
+                } else {
+                    /********* GAME ********/
+
+                    /******** Draw GUI elements ********/
+
+                    /* Status bar
+                    * For levels 4 and 5 the status bar is drawn at the bottom of the scene.
+                    * Set a flag to indicate that the status bar is going to be drawn at the bottom.
+                    */
+                    Uint8 NonInverseLevel = Level < 4 || 5 < Level;
+
+                    /* Set Status Bar vertical position depending on the level loaded */
+                    Sint16 BarTop = NonInverseLevel ? 0 : 43;
+
+                    Uint8 StartLives = Player.Lives;
+                    
+                    #ifdef ZEROTH_LIFE
+                    for (i = 0; i < Player.Lives - 1; ++i)
+                    #else
+                    for (i = 0; i < Player.Lives; ++i)
+                    #endif
+                        /* Draw hearts */
+                        DrawObject(PixelMap, GetObject(gLife), NewVec2(i * 6, BarTop));
+                    
+                    /* Draw bonus weapon icon */
+                    DrawObject(PixelMap, GetObject((Graphics)(gLife + Player.Weapon)), NewVec2(33, BarTop));
+                    /* Remaining bonus weapon shots */
+                    DrawSmallNumber(PixelMap, Player.Bonus, 2, NewVec2(43, BarTop));
+                    /* Game score */
+                    DrawSmallNumber(PixelMap, Player.Score, 5, NewVec2(71, BarTop));
                 }
 
                 /******** Draw scene ********/
@@ -339,7 +374,7 @@ int main(int argc, char *argv[]) {
 
     /** Exit **/
     EmptyEnemyList(&Enemies); /* Release remaining enemies */
-    // EmptyScenery(&Scene); /* Freeing remaining track elements */
+    EmptyScenery(&Scene); /* Freeing remaining track elements */
     EmptyShotList(&Shots); /* Release remaining shots */
     FreeDynamicGraphics(); /* Freeing dynamic graphic objects */
     FreeDynamicEnemies(); /* Unleash dynamic enemies */
