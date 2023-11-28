@@ -116,6 +116,9 @@ int main(int argc, char *argv[]) {
     /* How many levels does the game data folder has? */
     Uint8 LevelCount = 0;
 
+    /* Last level file, needed to determine the last level */
+    FILE* LastLevel = GetLevel(0);
+
     /* Pointer to the first element in the linked list of shots */
     Shot *Shots = NULL;
 
@@ -126,6 +129,13 @@ int main(int argc, char *argv[]) {
      * Set to false after the end of each level
      */
     Uint8 MoveScene;
+
+    /* Read the number of level available */
+    while (LastLevel) {
+        fclose(LastLevel);
+        ++LevelCount;
+        LastLevel = GetLevel(LevelCount);
+    }
 
     /* Start timer to update scene
      * The timer calls the function every x frames to update
@@ -146,9 +156,15 @@ int main(int argc, char *argv[]) {
     /* Load pixels for introduction animation */
     UncompressObjects();
 
-    /* Game loop */
+    if (argc > 2) {
+        if (strcmp(argv[1], "-lvl") == 0) {
+            SavedLevel = atoi(argv[2]);
+        }
+    }
+
     srand(time(NULL));
 
+    /********* Game Loop *********/
     while (run) {
         SDL_WaitEvent(&e);
 
@@ -171,7 +187,7 @@ int main(int argc, char *argv[]) {
                         Level = MENU_SCREEN_MAIN;
                 #endif /* PAUSE */
                 
-                /** Record and game end screen **/
+                /* Record and game end screen */
                 } else if (Level == MENU_SCREEN_HIGH_SCORE || Level == LevelCount) {
                     if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_ESCAPE) /* Returns to the main menu with Enter or Esc */
                         Level = -1;

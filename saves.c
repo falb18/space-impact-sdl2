@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "saves.h"
 
 /* Reads the saved level if it has been saved */
@@ -54,7 +56,6 @@ void PlaceTopScore(unsigned int *Arr, Uint16 Entry) {
 /* Append a filename to a path by identifier */
 void FillFileName(char* Path, Uint16 FileID) {
     char Number[6]; /* As text, the identifier, 100000, just won't be there */
-    // itoa(FileID, Number, 10); /* Creating text from numbers */
     sprintf(Number, "%d", FileID);
     strcat(Path, Number); /* Append filename to path */
     strcat(Path, ".dat"); /* Append an extension to the path */
