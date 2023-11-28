@@ -13,6 +13,9 @@ add_executable(
     "main.c"
     "graphics.c"
     "font.c"
+    "enemies.c"
+    "saves.c"
+    "shotlist.c"
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
