@@ -94,6 +94,8 @@ int main(int argc, char *argv[]) {
     /* Wait x frames for introduction animation */
     Uint8 FrameHold = 3;
 
+    PlayerObject Player;
+
     /* Level ID, main menu == -1 */
     Sint8 Level = -1;
 
@@ -101,6 +103,20 @@ int main(int argc, char *argv[]) {
     Uint8 MenuItem = 1;
 
     Uint8 SavedLevel = 0;
+
+    /* Player flags, toggled when corresponding button is pressed */
+    Uint8 PlayerUp, PlayerDown, PlayerLeft, PlayerRight, PlayerShooting = 0;
+
+    /* Wait 5 frames until next player's shoot */
+    Uint8 PlayerShootTimer = 0;
+
+    /* How many levels does the game data folder has? */
+    Uint8 LevelCount = 0;
+
+    /* Flag to enable landscape scrolling
+     * Set to false after the end of each level
+     */
+    Uint8 MoveScene;
 
     /* Start timer to update scene
      * The timer calls the function every x frames to update
@@ -128,6 +144,97 @@ int main(int argc, char *argv[]) {
         SDL_WaitEvent(&e);
 
         switch (e.type) {
+            
+            case SDL_KEYDOWN:
+                /* If any key is pressed stop intro animation */
+                if (IntroPhase) {
+                    IntroPhase = 0;
+                    // AudioFlags |= SOUND_MENUBTN;
+                
+                #ifdef PAUSE
+                /* Pause game */
+                } else if (Level == MENU_SCREEN_PAUSE) {
+                    if (e.key.keysym.sym == SDLK_RETURN) {
+                        Level = MenuItem == 1 ? SavedLevel : MENU_SCREEN_MAIN;
+                    } else if (e.key.keysym.sym == SDLK_UP || e.key.keysym.sym == SDLK_DOWN)
+                        MenuItem = 3 - MenuItem;
+                    else if (e.key.keysym.sym == SDLK_ESCAPE)
+                        Level = MENU_SCREEN_MAIN;
+                #endif /* PAUSE */
+                
+                /** Record and game end screen **/
+                } else if (Level == MENU_SCREEN_HIGH_SCORE || Level == LevelCount) {
+                    if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_ESCAPE) /* Returns to the main menu with Enter or Esc */
+                        Level = -1;
+                    // AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
+                
+                /* Main menu */
+                } else if (Level == MENU_SCREEN_MAIN) {
+                    // AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
+                    if (e.key.keysym.sym == SDLK_RETURN) { /* Enter */
+                        if (SavedLevel == 0)
+                            MenuItem++; /* Relates the menu items to the menu that starts with the resume (new game instead of 1st, 2nd, etc.) */
+                        if (MenuItem == 3) {
+                            Level = MENU_SCREEN_HIGH_SCORE; /* This is the ID of the record screen */
+                            #ifdef LEGACY_TOP_SCORE
+                            TimeInScores = 0; /* Start the animation of the record screen from the beginning */
+                            #endif /* LEGACY_TOP_SCORE */
+                            if (SavedLevel == 0) /* Because the menu item ID has increased for the screen without continue, it must be reseti */
+                                MenuItem = 2;
+                        } else {
+
+                            /* An option to load a level has been selected */
+                            
+                            if (MenuItem == 1) /* Select Continue */
+                                Level = SavedLevel;
+                            else /* Select New Game */
+                                Level = 0;
+                            
+                            /* Clear shot list if there's any left from the previous game */
+                            // EmptyShotList(&Shots);
+
+                            /* Reset player properties */
+                            Player.Lives = 3;
+                            Player.Score = 0;
+                            /* In a new game player always begins with three missiles */
+                            Player.Bonus = 3;
+                            Player.Weapon = Missile;
+                            /* Player's starting position */
+                            Player.Pos = NewVec2(3, 20);
+                            Player.Protection = 50;
+                            PlayerShootTimer = 0;
+                            
+                            
+                            PlayerUp = PlayerDown = PlayerLeft = PlayerRight = PlayerShooting = 0;
+                            // LevelSpawner(&Enemies, Level);
+                            // EmptyScenery(&Scene);
+                            MoveScene = 1;
+                        }
+                    }
+                    else if (e.key.keysym.sym == SDLK_ESCAPE) /* Also exit the Esc key */
+                        run = 0;
+                    else if (e.key.keysym.sym == SDLK_UP) /* Up arrow: previous menu item, circular */
+                        MenuItem = MenuItem == 1 ? (SavedLevel ? 3 : 2) : (MenuItem - 1);
+                    else if (e.key.keysym.sym == SDLK_DOWN) /* Down arrow: Next menu item, in a circle */
+                        MenuItem = MenuItem % (SavedLevel ? 3 : 2) + 1;
+                
+                }
+                break;
+            
+            case SDL_KEYUP: /* When the keys are released, the variables recording the hold are reset */
+                /* These are only in-game, but you don't need to check this, because the values have no effect elsewhere */
+                /* By the way, this was a switch, only that would increase the generated code by 4 bytes */
+                if (e.key.keysym.sym == SDLK_UP)
+                    PlayerUp = 0;
+                if (e.key.keysym.sym == SDLK_DOWN)
+                    PlayerDown = 0;
+                if (e.key.keysym.sym == SDLK_LEFT)
+                    PlayerLeft = 0;
+                if (e.key.keysym.sym == SDLK_RIGHT)
+                    PlayerRight = 0;
+                if (e.key.keysym.sym == SDLK_SPACE)
+                    PlayerShooting = 0;
+                break;
             
             /* Update scene after timeout */
             case SDL_USEREVENT:
