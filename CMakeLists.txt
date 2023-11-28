@@ -15,6 +15,7 @@ add_executable(
     "font.c"
     "enemies.c"
     "saves.c"
+    "scenery.c"
     "shotlist.c"
 )
 

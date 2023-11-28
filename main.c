@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
             case SDL_USEREVENT:
                 memset(PixelMap, 0, sizeof(PixelMap));
 
-                /* Animate game intro */
+                /******** Game intro ********/
                 if (IntroPhase) {
                     
                     DrawObject(PixelMap, GetObject(gSpace), NewVec2(8, 12 - IntroPhase)); /* The text "Space" should float in from the top */

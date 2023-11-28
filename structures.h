@@ -121,4 +121,11 @@ typedef struct Shot {
     struct Shot *Next;
 } Shot, *ShotList;
 
+/* Chained list of landscape */
+typedef struct Scenery {
+    Graphics Model; /* Graphic object ID */
+    Vec2 Pos; /* Place on the level */
+    struct Scenery *Next; /* Next item */
+} Scenery, *SceneryList;
+
 #endif /* STRUCTURES_H */
