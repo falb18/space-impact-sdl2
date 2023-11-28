@@ -6,8 +6,11 @@
 #include <math.h>
 
 #include "config.h"
+#include "enemies.h"
 #include "font.h"
 #include "graphics.h"
+#include "saves.h"
+#include "shotlist.h"
 #include "structures.h"
 
 #define MENU_SCREEN_MAIN -1
@@ -113,6 +116,12 @@ int main(int argc, char *argv[]) {
     /* How many levels does the game data folder has? */
     Uint8 LevelCount = 0;
 
+    /* Pointer to the first element in the linked list of shots */
+    Shot *Shots = NULL;
+
+    /* Pointer to the first element in the linked list of enemies */
+    EnemyList *Enemies = NULL;
+
     /* Flag to enable landscape scrolling
      * Set to false after the end of each level
      */
@@ -191,7 +200,7 @@ int main(int argc, char *argv[]) {
                                 Level = 0;
                             
                             /* Clear shot list if there's any left from the previous game */
-                            // EmptyShotList(&Shots);
+                            EmptyShotList(&Shots);
 
                             /* Reset player properties */
                             Player.Lives = 3;
@@ -206,7 +215,7 @@ int main(int argc, char *argv[]) {
                             
                             
                             PlayerUp = PlayerDown = PlayerLeft = PlayerRight = PlayerShooting = 0;
-                            // LevelSpawner(&Enemies, Level);
+                            LevelSpawner(&Enemies, Level);
                             // EmptyScenery(&Scene);
                             MoveScene = 1;
                         }
