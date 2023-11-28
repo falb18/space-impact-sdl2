@@ -94,6 +94,14 @@ int main(int argc, char *argv[]) {
     /* Wait x frames for introduction animation */
     Uint8 FrameHold = 3;
 
+    /* Level ID, main menu == -1 */
+    Sint8 Level = -1;
+
+    /* Option selected in the menu */
+    Uint8 MenuItem = 1;
+
+    Uint8 SavedLevel = 0;
+
     /* Start timer to update scene
      * The timer calls the function every x frames to update
      * the scene.
@@ -140,6 +148,18 @@ int main(int argc, char *argv[]) {
                             FrameHold = (--IntroPhase == 1) ? FRAMERATE : 2;
                         }
                     }
+                /********* Main menu *********/
+                } else if (Level == MENU_SCREEN_MAIN) {
+                    /* The beginning of the menu item indicator, on Nokia 3310 it is 8-2- */
+                    DrawSmallNumber(PixelMap, 8, 1, NewVec2(65, 0)); /* Calling the number writer costs fewer bytes */
+                    DrawObject(PixelMap, GetObject(gShot), NewVec2(69, 2));
+                    DrawSmallNumber(PixelMap, 2, 1, NewVec2(73, 0));
+                    DrawObject(PixelMap, GetObject(gShot), NewVec2(77, 2));
+                    DrawSmallNumber(PixelMap, gNum0 + MenuItem, 1, NewVec2(81, 0)); /* The number of the selected menu item */
+                    DrawText(PixelMap, SavedLevel ? "Continue\nNew game\nTop score" : "New game\nTop score", NewVec2(1, 7), 11); /* List menu items, all as text */
+                    InvertScreenPart(PixelMap, NewVec2(0, MenuItem * 11 - 5), NewVec2(76, MenuItem * 11 + 5)); /* Inverts the image around the selected menu item */
+                    DrawText(PixelMap, "Select", NewVec2(24, 40), 0); /* Select inscription at the bottom */
+                    DrawScrollBar(PixelMap, (MenuItem - 1) * (SavedLevel ? 50 : 100)); /* Draw a scroll bar */
                 }
 
                 /******** Draw scene ********/
