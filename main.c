@@ -10,6 +10,7 @@
 #include "font.h"
 #include "graphics.h"
 #include "saves.h"
+#include "scenery.h"
 #include "shotlist.h"
 #include "structures.h"
 
@@ -248,6 +249,41 @@ int main(int argc, char *argv[]) {
                     else if (e.key.keysym.sym == SDLK_DOWN) /* Down arrow: Next menu item, in a circle */
                         MenuItem = MenuItem % (SavedLevel ? 3 : 2) + 1;
                 
+                } else {
+                
+                    /* Game: */
+
+                    #ifdef GHOSTING
+                    if (!PlayerUp && !PlayerDown && !PlayerLeft && !PlayerRight && !PlayerShooting)
+                    #endif /* GHOSTING */
+                    switch(e.key.keysym.sym) {
+                        /* Arrow keys: Move a player */
+                        case SDLK_UP: PlayerUp = 1; break;
+                        case SDLK_DOWN: PlayerDown = 1; break;
+                        case SDLK_LEFT: PlayerLeft = 1; break;
+                        case SDLK_RIGHT: PlayerRight = 1; break;
+                        case SDLK_SPACE: PlayerShooting = 1; break; /* Space: fire */
+                        case SDLK_LCTRL: /* Left and Right Ctrl: Use bonus weapon */
+                        case SDLK_RCTRL:
+                            if (Player.Bonus) { /* Only if you still have a bonus */
+                                /* Bonus projectile from the player's nose: start at the top of the court in the case of a wall, hang into the player's nose in the case of a beam */
+                                AddShot(&Shots, NewVec2(Player.Pos.x + 9, Player.Weapon == Wall ? 5 : Player.Pos.y + 2), Player.Weapon == Beam ? 0 : 2, 1, Player.Weapon);
+                                --Player.Bonus; /* Use of bonus */
+                                // AudioFlags |= SOUND_BONUSWPN; /* Release the sound of a bonus weapon */
+                            }
+                            break;
+                        case SDLK_ESCAPE:
+                            SavedLevel = Level; /* Save level */
+                            SaveLevel(Level); /* Save that the player has exited this level */
+                            #ifdef PAUSE
+                            Level = MENU_SCREEN_PAUSE; /* Enter the pause menu */
+                            #else
+                            Level = MENU_SCREEN_MAIN; /* Go to menu */
+                            #endif /* PAUSE */
+                            MenuItem = 1; /* Set the menu to the first item */
+                            break;
+                        default: break;
+                    }
                 }
                 break;
             
@@ -327,6 +363,62 @@ int main(int argc, char *argv[]) {
                     DrawSmallNumber(PixelMap, Player.Bonus, 2, NewVec2(43, BarTop));
                     /* Game score */
                     DrawSmallNumber(PixelMap, Player.Score, 5, NewVec2(71, BarTop));
+
+                    /******** Update shots ********/
+
+                    /* Handle projectiles on the field */
+                    ShotListTick(&Shots, PixelMap, &Player);
+                    
+                    /******** Player movement ********/
+
+                    /* The player only can move the spaceship when there are still
+                    * enemies on the scene
+                    */
+                    if (Enemies) {
+                        if (PlayerLeft && Player.Pos.x > (Player.Protection ? 2 : 0)) {
+                            --Player.Pos.x;
+                        }
+                        
+                        if (PlayerRight && Player.Pos.x < 74)
+                            ++Player.Pos.x;
+                        
+                        /* There's a 5 pixels margin on top and bottom of the scene.
+                        * The player can't move the spaceship beyond those margins.
+                        */
+                        if (PlayerUp && Player.Pos.y > NonInverseLevel * 5 + (Player.Protection ? 2 : 0))
+                            --Player.Pos.y;
+                        
+                        if (PlayerDown && Player.Pos.y < 36 + NonInverseLevel * 5 - (Player.Protection ? 2 : 0))
+                            ++Player.Pos.y;
+                        
+                    } else {
+                        EmptyShotList(&Shots);
+                        if (Player.Pos.x > 84) { /* If the animation is over, the player has left the field, complete the next level */
+                            Player.Pos = NewVec2(3, 20); /* Position back to base */
+                            PlayerShootTimer = 0; /* Weapon cooldown */
+                            PlayerUp = PlayerDown = PlayerLeft = PlayerRight = PlayerShooting = 0; /* Reset player actions if the player did not release the buttons even during the animation */
+                            LevelSpawner(&Enemies, ++Level); /* Populating the next level */
+                            if (Level == LevelCount) { /* If the next level is the end of the game screen */
+                                // PlaceTopScore(TopScores, Player.Score); /* Place your final score among the best */
+                                SavedLevel = 0; /* There is no way to continue a finished game */
+                                SaveLevel(SavedLevel); /* Delete save */
+                            }
+                            else /* If there is still a track, clear the landscape so there is room for him to draw */
+                                EmptyScenery(&Scene);
+                            MoveScene = 1; /* Restart landscape movement */
+                        } else { /* Floating off the screen */
+                            Sint16 OutPosition = NonInverseLevel ? 10 : 31; /* The swim out row depends on whether the landscape is at the top or bottom */
+                            if (Player.Pos.y < OutPosition) /* Go to the swim-out queue first*/
+                                ++Player.Pos.y; /* If you're under it, swim up */
+                            else if (Player.Pos.y > OutPosition)
+                                --Player.Pos.y; /* If above it, swim down */
+                            else /* Once in the swim-out line, swim out to the right */
+                                Player.Pos.x += 3;
+                        }
+                    }
+
+                    DrawObject(PixelMap, GetObject(Player.Protection ? G_PROTECTION_A1 + (Player.Protection / 2) % 2 : G_PLAYER),
+                           Player.Protection ? NewVec2(Player.Pos.x - 2, Player.Pos.y - 2) : Player.Pos);
                 }
 
                 /******** Draw scene ********/
