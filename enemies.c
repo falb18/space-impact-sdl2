@@ -228,12 +228,14 @@ void EnemyListTick(EnemyListStart *Enemies, PlayerObject *Player, Uint8 *PixelMa
 
 /* Open a level file */
 FILE* GetLevel(Uint8 Level) {
-    /* Folder = 12
+    /* Folder = 15
      * 3-digit ID = 3
      * Null character = 1
      * Start the string with the path to the level files
+     * TODO: Edit CMake to include the data levels in the build directory.
+     *       The path below is only provisional and may not work all the time.
      */
-    char Path[12 + 3 + 1 ] = "data/levels/";
+    char Path[15 + 3 + 1 ] = "../data/levels/";
     
     /* Add file name to the path */
     FillFileName(Path, Level);
@@ -282,7 +284,10 @@ Enemy GetEnemy(Uint8 ID) {
         /* The two coordinates which the enemy's move up and down */
         Uint8 MovesBetween[2];
 
-        char Path[13 + 3 + 1 ] = "data/enemies/";
+        /* TODO: Edit CMake to include the data enemies in the build directory.
+         *       The path below is only provisional and may not work all the time.
+         */
+        char Path[16 + 3 + 1 ] = "../data/enemies/";
         FillFileName(Path, ID);
         ObjectData = fopen(Path, "rb");
         

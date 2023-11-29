@@ -233,9 +233,11 @@ Object GetObject(Uint16 ObjectID) {
             
             /* The complete path = folder + max three-digit ID + null character
              * Example: data/objects/1.dat
+             * TODO: Edit CMake to include the data objects in the build directory.
+             *       The path below is only provisional and may not work all the time.
              */
             /* Init the string with the folder location */
-            char Path[13 + 3  + 1] = "data/objects/";
+            char Path[16 + 3  + 1] = "../data/objects/";
             FillFileName(Path, ObjectID);
             ObjectData = fopen(Path, "rb");
             
