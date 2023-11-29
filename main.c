@@ -126,6 +126,9 @@ int main(int argc, char *argv[]) {
     /* Pointer to the first element in the linked list of enemies */
     EnemyList *Enemies = NULL;
 
+    /* Animation timer */
+    Uint8 AnimPulse = 0;
+
     /* Pointer to the first element in the linked list of landscape objects */
     Scenery *Scene = NULL;
 
@@ -428,6 +431,38 @@ int main(int argc, char *argv[]) {
                         AddShot(&Shots, NewVec2(Player.Pos.x + 9, Player.Pos.y + 3), 2, 1, Standard);
                         PlayerShootTimer = 4;
                         // AudioFlags |= SOUND_SHOT;
+                    }
+
+                    /******** Update and draw enemies ********/
+                    AnimPulse = 1 - AnimPulse; /* It bounces between 1 and 0 to halve the speed of the animations, otherwise it's too fast */
+                    
+                    EnemyListTick(&Enemies, &Player, PixelMap, &Shots, AnimPulse, &MoveScene);
+                    
+                    /******** Draw landscape ********/
+                    HandleScenery(&Scene, PixelMap, MoveScene, &Player, Level);
+
+                    /* For some level the colors are inverted */
+                    if (Level == 0 || !NonInverseLevel)
+                        InvertScreen(PixelMap);
+                    
+                    if (Player.Protection) /* If the player has protection */
+                    Player.Protection--; /* Run out */
+                
+                    if (Player.Lives == 0) { /* In the event of the player's death */
+                        // PlaceTopScore(TopScores, Player.Score); /* Substitute score among the best and save */
+                        Level = LevelCount; /* Jump to the end of the game screen, which is instead of the last level */
+                        SavedLevel = 0; /* There is no way to continue a completed game */
+                        SaveLevel(SavedLevel); /* Delete save */
+                        // AudioFlags |= SOUND_DEATH; /* Play death sound */
+                    } else {
+                        /* When a player looses a life, move the spaceship to the starting position and
+                        * start the protection animation.
+                        */
+                        if (Player.Lives != StartLives) {
+                            Player.Pos = NewVec2(3, 20);
+                            Player.Protection = 50;
+                            // AudioFlags |= SOUND_DEATH;
+                        }
                     }
                 }
 
