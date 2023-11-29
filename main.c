@@ -419,6 +419,16 @@ int main(int argc, char *argv[]) {
 
                     DrawObject(PixelMap, GetObject(Player.Protection ? G_PROTECTION_A1 + (Player.Protection / 2) % 2 : G_PLAYER),
                            Player.Protection ? NewVec2(Player.Pos.x - 2, Player.Pos.y - 2) : Player.Pos);
+                    
+                    /* Wait x frames between shots */
+                    if (PlayerShootTimer)
+                        PlayerShootTimer--;
+                    
+                    if (PlayerShooting && PlayerShootTimer == 0) {
+                        AddShot(&Shots, NewVec2(Player.Pos.x + 9, Player.Pos.y + 3), 2, 1, Standard);
+                        PlayerShootTimer = 4;
+                        // AudioFlags |= SOUND_SHOT;
+                    }
                 }
 
                 /******** Draw scene ********/
