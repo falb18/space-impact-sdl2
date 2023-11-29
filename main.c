@@ -137,7 +137,16 @@ int main(int argc, char *argv[]) {
      */
     Uint8 MoveScene;
 
+    #ifdef LEGACY_TOP_SCORE
+    /* Time spent in the record screen */
+    Uint8 TimeInScores = 0;
+    #endif /* LEGACY_TOP_SCORE */
+    
+    unsigned int TopScores[10];
+    memset(TopScores, 0, sizeof(TopScores));
+
     ReadSavedLevel(&SavedLevel);
+    ReadTopScore(TopScores);
 
     /* Read the number of level available */
     while (LastLevel) {
@@ -324,6 +333,63 @@ int main(int argc, char *argv[]) {
                             FrameHold = (--IntroPhase == 1) ? FRAMERATE : 2;
                         }
                     }
+                
+                /** Game end screen **/
+                } else if (Level == LevelCount) {
+                    char ScoreText[6]; /* It can be a maximum of five digits + closing character */
+                    sprintf(ScoreText, "%d", Player.Score); /* Convert score to text */
+                    DrawText(PixelMap, "Game over\nYour score:", NewVec2(1, 1), 9);
+                    DrawText(PixelMap, ScoreText, NewVec2(1, 19), 0);
+                #ifdef PAUSE
+                /* Pause menu */
+                } else if (Level == MENU_SCREEN_PAUSE) {
+                    /* The beginning of the menu item indicator, this is on Nokia 3310 8-2- */
+                    DrawSmallNumber(PixelMap, 8, 1, NewVec2(57, 0)); /* Calling the number writer costs fewer bytes */
+                    DrawObject(PixelMap, GetObject(gShot), NewVec2(61, 2));
+                    DrawSmallNumber(PixelMap, 2, 1, NewVec2(65, 0));
+                    DrawObject(PixelMap, GetObject(gShot), NewVec2(69, 2));
+                    DrawSmallNumber(PixelMap, 1, 1, NewVec2(73, 0));
+                    DrawObject(PixelMap, GetObject(gShot), NewVec2(77, 2));
+                    DrawSmallNumber(PixelMap, gNum0 + MenuItem, 1, NewVec2(81, 0)); /* The number of the selected menu item */
+                    DrawText(PixelMap, "Continue\nExit", NewVec2(1, 7), 11); /* List menu items, all as text */
+                    InvertScreenPart(PixelMap, NewVec2(0, MenuItem * 11 - 5), NewVec2(76, MenuItem * 11 + 5)); /* Ainverts the image around the selected menu item */
+                    DrawText(PixelMap, "Select", NewVec2(24, 40), 0); /* Select inscription at the bottom */
+                    DrawScrollBar(PixelMap, (MenuItem - 1) * 100); /* Draw a scroll bar */
+                #endif /* PAUSE */
+                
+                /* Top score screen */
+                } else if (Level == MENU_SCREEN_HIGH_SCORE) {
+                    #ifdef LEGACY_TOP_SCORE
+                    const Uint8 OneSign[24] = {0,0,1,0,0,1,1,0,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1}; /* A single pixel map */
+                    char ScoreText[6]; /* It can be a maximum of five digits + closing character */
+                    itoa(TopScores[0], ScoreText, 10); /* Convert score to text */
+                    DrawText(PixelMap, "Top score:", NewVec2(1, 1), 0);
+                    DrawText(PixelMap, ScoreText, NewVec2(1, 11), 0); /* Display the best recorded score */
+                    for (i = 0; i < 4; ++i) { /* The individual columns */
+                        for (j = 0; j < 6; ++j) { /* The individual lines */
+                            /* Who would have thought that x == 0 || x == 1 instead of x >= 0 && x <= 1 successfully saves 300 bytes */
+                            Vec2 Pos = NewVec2(64 + i * 5, 1 + j * 4);
+                            if (TimeInScores / 3 - (4 - i) - j >= 0 && TimeInScores / 3 - (4 - i) - j <= 1) /* This is a downward moving diagonal formula at third speed */
+                                DrawObject(PixelMap, GetObject(TimeInScores / 3 - (4 - i) - j ? gDotFull : gDotEmpty), Pos); /* There should be a pixel gap between the points */
+                            else if (TimeInScores / 3 - (4 - i) - j > 1 && OneSign[j * 4 + i]) /* As the diagonals move down, their traces outline each one */
+                                DrawObject(PixelMap, GetObject(TimeInScores < 45 ? gDotEmpty : gDotFull), Pos); /* Color change at 45 */
+                        }
+                    }
+                    if (++TimeInScores == 54) /* The animation should stay between 35 and 53, i.e. repeat the flashing */
+                        TimeInScores = 35;
+                    #else
+                    /* Listing of placements */
+                    Vec2 Pos = {3, 3}; /* Starting position */
+                    for (i = 0; i < 10; i++) {
+                        if (i == 5) /* For element 5, a new column must be started at the top */
+                            Pos = NewVec2(47, 3);
+                        DrawSmallNumber(PixelMap, i + 1, i == 9 ? 2 : 1, Pos); /* Place */
+                        DrawObject(PixelMap, GetObject(gShot), NewVec2(Pos.x + 4, Pos.y + 2)); /* Separator */
+                        DrawSmallNumber(PixelMap, TopScores[i], 5, NewVec2(Pos.x + 24, Pos.y)); /* Score */
+                        Pos.y += 9; /* To spread the screen evenly, you need 4 pixels between the numbers, and a number is 5 pixels high, so you have to jump 9 */
+                    }
+                    #endif /* LEGACY_TOP_SCORE*/
+                
                 /********* Main menu *********/
                 } else if (Level == MENU_SCREEN_MAIN) {
                     /* The beginning of the menu item indicator, on Nokia 3310 it is 8-2- */

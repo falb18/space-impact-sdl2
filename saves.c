@@ -13,7 +13,7 @@ void ReadSavedLevel(Uint8 *Level) {
 
 /* Reads the saved best scores into the array received in the parameter if they have been saved */
 void ReadTopScore(unsigned int *Arr) {
-    FILE* f = fopen("top_score.txt", "rt"); /* Fájl megnyitása olvasásra */
+    FILE* f = fopen("top_score.txt", "rt"); /* Open file for reading */
     if (f) { /* If the file can be opened, then try to read it */
         unsigned int* End = Arr + 10;
         while (Arr != End) /* It reads the 10 values one by one */
