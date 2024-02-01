@@ -40,7 +40,7 @@ static void SDL_StartApplication(App *game, Vec2 FrameSize) {
     renderer_flags = SDL_RENDERER_ACCELERATED;
 
     /* Init video, sound and timer */
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) < 0) {
         printf("Failed to initialize SDL: %s\n", SDL_GetError());
         exit(1);
     }
@@ -78,6 +78,10 @@ int main(int argc, char *argv[]) {
     Vec2 FrameSize = {SCREEN_WIDTH * UPSCALE_FACTOR, SCREEN_HEIGHT * UPSCALE_FACTOR};
 
     SDL_StartApplication(&game, FrameSize);
+
+    /* Set audio variables */
+    SDL_AudioSpec audio;
+    Sint32 AudioFlags = 0;
 
     /* Frame timer */
     SDL_TimerID t;
@@ -168,6 +172,18 @@ int main(int argc, char *argv[]) {
      */
     for (i = 0; i < 84 * 48; ++i)
         OldPixelMap[i] = 0;
+    
+    /* Initialize audio */
+    audio.freq = SAMPLE_RATE;
+    audio.format = AUDIO_S16;
+    audio.channels = 1; /* Mono */
+    audio.samples = 1024;
+    audio.callback = AudioCallback;
+    audio.userdata = &AudioFlags;
+
+    if (SDL_OpenAudioDevice(NULL, 0, &audio, NULL, SDL_AUDIO_ALLOW_ANY_CHANGE)  >= 0) {
+        SDL_PauseAudio(0);
+    }
 
     /* Load pixels for fonts */
     UncompressFont();
@@ -193,7 +209,7 @@ int main(int argc, char *argv[]) {
                 /* If any key is pressed stop intro animation */
                 if (IntroPhase) {
                     IntroPhase = 0;
-                    // AudioFlags |= SOUND_MENUBTN;
+                    AudioFlags |= SOUND_MENUBTN;
                 
                 #ifdef PAUSE
                 /* Pause game */
@@ -210,11 +226,11 @@ int main(int argc, char *argv[]) {
                 } else if (Level == MENU_SCREEN_HIGH_SCORE || Level == LevelCount) {
                     if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_ESCAPE) /* Returns to the main menu with Enter or Esc */
                         Level = -1;
-                    // AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
+                    AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
                 
                 /* Main menu */
                 } else if (Level == MENU_SCREEN_MAIN) {
-                    // AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
+                    AudioFlags |= SOUND_MENUBTN; /* Make any button sound, even if it does nothing */
                     if (e.key.keysym.sym == SDLK_RETURN) { /* Enter */
                         if (SavedLevel == 0)
                             MenuItem++; /* Relates the menu items to the menu that starts with the resume (new game instead of 1st, 2nd, etc.) */
@@ -282,7 +298,7 @@ int main(int argc, char *argv[]) {
                                 /* Bonus projectile from the player's nose: start at the top of the court in the case of a wall, hang into the player's nose in the case of a beam */
                                 AddShot(&Shots, NewVec2(Player.Pos.x + 9, Player.Weapon == Wall ? 5 : Player.Pos.y + 2), Player.Weapon == Beam ? 0 : 2, 1, Player.Weapon);
                                 --Player.Bonus; /* Use of bonus */
-                                // AudioFlags |= SOUND_BONUSWPN; /* Release the sound of a bonus weapon */
+                                AudioFlags |= SOUND_BONUSWPN; /* Release the sound of a bonus weapon */
                             }
                             break;
                         case SDLK_ESCAPE:
@@ -497,7 +513,7 @@ int main(int argc, char *argv[]) {
                     if (PlayerShooting && PlayerShootTimer == 0) {
                         AddShot(&Shots, NewVec2(Player.Pos.x + 9, Player.Pos.y + 3), 2, 1, Standard);
                         PlayerShootTimer = 4;
-                        // AudioFlags |= SOUND_SHOT;
+                        AudioFlags |= SOUND_SHOT;
                     }
 
                     /******** Update and draw enemies ********/
@@ -520,7 +536,7 @@ int main(int argc, char *argv[]) {
                         Level = LevelCount; /* Jump to the end of the game screen, which is instead of the last level */
                         SavedLevel = 0; /* There is no way to continue a completed game */
                         SaveLevel(SavedLevel); /* Delete save */
-                        // AudioFlags |= SOUND_DEATH; /* Play death sound */
+                        AudioFlags |= SOUND_DEATH; /* Play death sound */
                     } else {
                         /* When a player looses a life, move the spaceship to the starting position and
                         * start the protection animation.
@@ -528,7 +544,7 @@ int main(int argc, char *argv[]) {
                         if (Player.Lives != StartLives) {
                             Player.Pos = NewVec2(3, 20);
                             Player.Protection = 50;
-                            // AudioFlags |= SOUND_DEATH;
+                            AudioFlags |= SOUND_DEATH;
                         }
                     }
                 }
@@ -583,6 +599,6 @@ int main(int argc, char *argv[]) {
     FreeDynamicGraphics(); /* Freeing dynamic graphic objects */
     FreeDynamicEnemies(); /* Unleash dynamic enemies */
     SDL_RemoveTimer(t); /* This is not necessary, it only eliminates the warning that t is not used */
-    // SDL_PauseAudio(1); /* Stop sound */
+    SDL_PauseAudio(1); /* Stop sound */
     SDL_Quit();
 }
