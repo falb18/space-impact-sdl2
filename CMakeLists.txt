@@ -17,6 +17,7 @@ add_executable(
     "saves.c"
     "scenery.c"
     "shotlist.c"
+    "audio.c"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES} m)

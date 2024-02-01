@@ -5,6 +5,7 @@
 #include <time.h>
 #include <math.h>
 
+#include "audio.h"
 #include "config.h"
 #include "enemies.h"
 #include "font.h"
